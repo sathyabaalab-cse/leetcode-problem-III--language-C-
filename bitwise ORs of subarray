@@ -1,0 +1,67 @@
+#include <stdlib.h>
+#include <stdbool.h>
+
+#define HASH_SIZE 1000003 // A prime number larger than the maximum expected unique values
+
+// A simple hash set structure for tracking global unique values
+typedef struct {
+    int* data;
+    bool* used;
+    int count;
+} HashSet;
+HashSet* createSet() {
+    HashSet* set = (HashSet*)malloc(sizeof(HashSet));
+    set->data = (int*)calloc(HASH_SIZE, sizeof(int));
+    set->used = (bool*)calloc(HASH_SIZE, sizeof(bool));
+    set->count = 0;
+    return set;
+}
+void insertSet(HashSet* set, int val) {
+    int index = (val % HASH_SIZE + HASH_SIZE) % HASH_SIZE;
+    while (set->used[index]) {
+        if (set->data[index] == val) return; 
+        index = (index + 1) % HASH_SIZE;     
+    }
+    set->data[index] = val;
+    set->used[index] = true;
+    set->count++;
+}
+
+void freeSet(HashSet* set) {
+    free(set->data);
+    free(set->used);
+    free(set);
+}
+
+int subarrayBitwiseORs(int* arr, int arrSize) {
+     HashSet* global_set = createSet();
+    int prev_or[32];
+    int prev_size = 0;
+    for (int i = 0; i < arrSize; i++) {
+        int current_or[32];
+        int current_size = 0;
+        current_or[current_size++] = arr[i];
+        insertSet(global_set, arr[i]);
+        for (int j = 0; j < prev_size; j++) {
+            int new_or = prev_or[j] | arr[i];
+            bool duplicate = false;
+            for (int k = 0; k < current_size; k++) {
+                if (current_or[k] == new_or) {
+                    duplicate = true;
+                    break;
+                }
+            }       
+            if (!duplicate) {
+                current_or[current_size++] = new_or;
+                insertSet(global_set, new_or);
+            }
+        }
+        prev_size = current_size;
+        for (int j = 0; j < prev_size; j++) {
+            prev_or[j] = current_or[j];
+        }
+    }
+    int result = global_set->count;
+    freeSet(global_set);
+    return result;
+}
