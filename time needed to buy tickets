@@ -1,0 +1,45 @@
+struct Person{
+    int id;
+    int tickets_needed;
+};
+int timeRequiredToBuy(int* tickets, int ticketsSize, int k) {
+    int max_queue_size=100005;
+    struct Person* queue = (struct Person*)malloc(max_queue_size * sizeof(struct Person));  
+    int front=0;
+    int rear=0;
+    int total_time=0;
+    for(int i=0;i<ticketsSize;i++)
+    {
+        queue[rear].id=i;
+        queue[rear].tickets_needed=tickets[i];
+        rear++;
+    }
+    while(front<rear)
+    {
+        struct Person current=queue[front];
+        front++;
+        current.tickets_needed--;
+        total_time++;
+        if(current.id==k && current.tickets_needed == 0)
+        {
+            free(queue);
+            return total_time;
+        }
+        if(current.tickets_needed>0)
+        {
+            queue[rear]=current;
+            rear++;
+        }
+    }
+    free(queue);
+    return total_time;
+}
+/*int main()
+{
+    int tickets[]={2,3,2};
+    int size=sizeof(tickets)/sizeof(tickets[0]);
+    int k=2;
+    int result = timeRequiredToBuy(tickets, size, k);
+    printf("Total time taken: %d seconds\n", result); 
+    return 0;
+}*/
