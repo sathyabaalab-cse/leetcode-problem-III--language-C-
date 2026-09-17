@@ -1,0 +1,47 @@
+/**
+ * Note: The returned array must be malloced, assume caller calls free().
+ */
+#include <stdlib.h>
+#include<stdio.h>
+int* getSubarrayBeauty(int* nums, int numsSize, int k, int x, int* returnSize) {
+    int total_subarrays = numsSize - k + 1;
+    *returnSize = total_subarrays;
+    int* result = (int*)malloc(total_subarrays * sizeof(int));
+    int count_buckets[51] = {0};
+    for (int i = 0; i < k; i++) {
+        if (nums[i] < 0) {
+            count_buckets[nums[i] + 50]++;
+        }
+    }
+    int current_count = 0;
+    int beauty = 0;
+    for (int num = -50; num <= -1; num++) {
+        current_count += count_buckets[num + 50];
+        if (current_count >= x) {
+            beauty = num;
+            break;
+        }
+    }
+    result[0] = beauty;
+    for (int i = k; i < numsSize; i++) {
+        if (nums[i] < 0) {
+            count_buckets[nums[i] + 50]++;
+        }
+        int leaving_num = nums[i - k];
+        if (leaving_num < 0) {
+            count_buckets[leaving_num + 50]--;
+        }
+        current_count = 0;
+        beauty = 0;
+        for (int num = -50; num <= -1; num++) {
+            current_count += count_buckets[num + 50];
+            if (current_count >= x) {
+                beauty = num;
+                break;
+            }
+        }
+        result[i - k + 1] = beauty;
+    }
+    
+    return result;
+}
