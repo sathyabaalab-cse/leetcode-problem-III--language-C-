@@ -1,0 +1,8 @@
+#include <string.h>
+int strStr(char* haystack, char* needle) {
+    char* match = strstr(haystack, needle);
+    if (match == NULL) {
+        return -1;
+    }
+    return match - haystack;
+}
