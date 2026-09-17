@@ -1,0 +1,19 @@
+#include <stdbool.h>
+int getNext(int n) {
+    int total_sum = 0;
+    while (n > 0) {
+        int digit = n % 10;
+        total_sum += digit * digit;
+        n /= 10;
+    }
+    return total_sum;
+}
+bool isHappy(int n) {
+    int tortoise = n;
+    int hare = getNext(n);
+    while (hare != 1 && tortoise != hare) {
+        tortoise = getNext(tortoise);
+        hare = getNext(getNext(hare));
+    }
+    return hare == 1;
+}
