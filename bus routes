@@ -1,0 +1,127 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+// Structure to map a stop to a list of bus routes passing through it
+typedef struct {
+    int stop;
+    int bus;
+} StopBusPair;
+
+// Comparison function to sort pairs by stop ID
+int comparePairs(const void* a, const void* b) {
+    StopBusPair* p1 = (StopBusPair*)a;
+    StopBusPair* p2 = (StopBusPair*)b;
+    if (p1->stop != p2->stop) {
+        return p1->stop - p2->stop;
+    }
+    return p1->bus - p2->bus;
+}
+
+int numBusesToDestination(int** routes, int routesSize, int* routesColSize, int source, int target) {
+    // 1. Edge Case: Already at destination
+    if (source == target) return 0;
+
+    // 2. Count total number of stop-to-bus mappings
+    int totalElements = 0;
+    for (int i = 0; i < routesSize; i++) {
+        totalElements += routesColSize[i];
+    }
+
+    // 3. Create and populate stop-to-bus relationship pairs
+    StopBusPair* pairs = (StopBusPair*)malloc(totalElements * sizeof(StopBusPair));
+    int pairIdx = 0;
+    for (int i = 0; i < routesSize; i++) {
+        for (int j = 0; j < routesColSize[i]; j++) {
+            pairs[pairIdx].stop = routes[i][j];
+            pairs[pairIdx].bus = i;
+            pairIdx++;
+        }
+    }
+
+    // Sort pairs by stop ID so we can binary search the buses passing through any stop
+    qsort(pairs, totalElements, sizeof(StopBusPair), comparePairs);
+
+    // Arrays to map a sorted stop index range within the 'pairs' array
+    // Max stop ID possible according to constraints is 10^6
+    int maxStopVal = 1000001; 
+    int* stopStartIdx = (int*)malloc(maxStopVal * sizeof(int));
+    int* stopEndIdx = (int*)malloc(maxStopVal * sizeof(int));
+    for (int i = 0; i < maxStopVal; i++) {
+        stopStartIdx[i] = -1;
+        stopEndIdx[i] = -1;
+    }
+
+    for (int i = 0; i < totalElements; i++) {
+        int st = pairs[i].stop;
+        if (stopStartIdx[st] == -1) {
+            stopStartIdx[st] = i;
+        }
+        stopEndIdx[st] = i;
+    }
+
+    // 4. BFS Tracking setup
+    bool* visitedBuses = (bool*)calloc(routesSize, sizeof(bool));
+    bool* visitedStops = (bool*)calloc(maxStopVal, sizeof(bool));
+
+    // Simple Linear Queue for BFS
+    // Max capacity bound safely by total elements elements 
+    int* queueStops = (int*)malloc(maxStopVal * sizeof(int));
+    int* queueBusesCount = (int*)malloc(maxStopVal * sizeof(int));
+    int head = 0, tail = 0;
+
+    // Enqueue source stop
+    queueStops[tail] = source;
+    queueBusesCount[tail] = 0;
+    tail++;
+    visitedStops[source] = true;
+
+    int result = -1;
+
+    // 5. BFS Loop
+    while (head < tail) {
+        int currentStop = queueStops[head];
+        int busesTaken = queueBusesCount[head];
+        head++;
+
+        // Find range of buses crossing currentStop
+        if (currentStop < maxStopVal && stopStartIdx[currentStop] != -1) {
+            int start = stopStartIdx[currentStop];
+            int end = stopEndIdx[currentStop];
+
+            for (int i = start; i <= end; i++) {
+                int bus = pairs[i].bus;
+                if (visitedBuses[bus]) continue;
+                visitedBuses[bus] = true;
+
+                // Explore all stops on this bus line
+                for (int j = 0; j < routesColSize[bus]; j++) {
+                    int nextStop = routes[bus][j];
+                    if (visitedStops[nextStop]) continue;
+
+                    if (nextStop == target) {
+                        result = busesTaken + 1;
+                        goto cleanup; // Exit loops early once target is matched
+                    }
+
+                    visitedStops[nextStop] = true;
+                    queueStops[tail] = nextStop;
+                    queueBusesCount[tail] = busesTaken + 1;
+                    tail++;
+                }
+            }
+        }
+    }
+
+cleanup:
+    // Free dynamic memory allocations
+    free(pairs);
+    free(stopStartIdx);
+    free(stopEndIdx);
+    free(visitedBuses);
+    free(visitedStops);
+    free(queueStops);
+    free(queueBusesCount);
+
+    return result;
+}
