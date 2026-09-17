@@ -1,0 +1,149 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <math.h>
+
+#define INF 1e9
+
+// Structure to represent a cell entry in our Min-Heap
+typedef struct {
+    int r;
+    int c;
+    int effort;
+} HeapNode;
+
+// Min-Heap Structure
+typedef struct {
+    HeapNode* data;
+    int size;
+    int capacity;
+} MinHeap;
+
+// Helper to create a new Min-Heap
+MinHeap* createMinHeap(int capacity) {
+    MinHeap* hp = (MinHeap*)malloc(sizeof(MinHeap));
+    hp->data = (HeapNode*)malloc(capacity * sizeof(HeapNode));
+    hp->size = 0;
+    hp->capacity = capacity;
+    return hp;
+}
+
+// Swap helper
+void swap(HeapNode* a, HeapNode* b) {
+    HeapNode temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+// Push item into Min-Heap
+void push(MinHeap* hp, int r, int c, int effort) {
+    if (hp->size == hp->capacity) return;
+    
+    int i = hp->size++;
+    hp->data[i].r = r;
+    hp->data[i].c = c;
+    hp->data[i].effort = effort;
+    
+    // Bubble up
+    while (i > 0 && hp->data[i].effort < hp->data[(i - 1) / 2].effort) {
+        swap(&hp->data[i], &hp->data[(i - 1) / 2]);
+        i = (i - 1) / 2;
+    }
+}
+
+// Pop the minimum effort item from the Min-Heap
+HeapNode pop(MinHeap* hp) {
+    HeapNode root = hp->data[0];
+    hp->data[0] = hp->data[--hp->size];
+    
+    int i = 0;
+    // Bubble down
+    while (2 * i + 1 < hp->size) {
+        int left = 2 * i + 1;
+        int right = 2 * i + 2;
+        int smallest = left;
+        
+        if (right < hp->size && hp->data[right].effort < hp->data[left].effort) {
+            smallest = right;
+        }
+        if (hp->data[i].effort <= hp->data[smallest].effort) {
+            break;
+        }
+        swap(&hp->data[i], &hp->data[smallest]);
+        i = smallest;
+    }
+    return root;
+}
+
+int minimumEffortPath(int** heights, int heightsSize, int* heightsColSize) {
+    int rows = heightsSize;
+    int cols = heightsColSize[0];
+    
+    // 1. Allocate and initialize the effort matrix
+    int** eff = (int**)malloc(rows * sizeof(int*));
+    for (int i = 0; i < rows; i++) {
+        eff[i] = (int*)malloc(cols * sizeof(int));
+        for (int j = 0; j < cols; j++) {
+            eff[i][j] = INF;
+        }
+    }
+    
+    // Directions for moving Up, Down, Left, Right
+    int dr[] = {-1, 1, 0, 0};
+    int dc[] = {0, 0, -1, 1};
+    
+    // 2. Initialize Min-Heap and push starting cell (0, 0)
+    MinHeap* hp = createMinHeap(rows * cols * 4); 
+    eff[0][0] = 0;
+    push(hp, 0, 0, 0);
+    
+    int result = 0;
+    
+    // 3. Process Dijkstra
+    while (hp->size > 0) {
+        HeapNode curr = pop(hp);
+        int r = curr.r;
+        int c = curr.c;
+        int currentEffort = curr.effort;
+        
+        // If we reached a stale heap entry with a worse effort, skip it
+        if (currentEffort > eff[r][c]) continue;
+        
+        // Target destination achieved early
+        if (r == rows - 1 && c == cols - 1) {
+            result = currentEffort;
+            break;
+        }
+        
+        // Check 4 adjacent neighbors
+        for (int i = 0; i < 4; i++) {
+            int nr = r + dr[i];
+            int nc = c + dc[i];
+            
+            // Boundary validation
+            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                // The effort for this specific link step is the absolute height difference
+                int stepEffort = abs(heights[r][c] - heights[nr][nc]);
+                
+                // The total route effort to the neighbor cell is the maximum hurdle encountered along the path
+                int maxPathEffort = (currentEffort > stepEffort) ? currentEffort : stepEffort;
+                
+                // Relax edge if a path with lesser overall effort is found
+                if (maxPathEffort < eff[nr][nc]) {
+                    eff[nr][nc] = maxPathEffort;
+                    push(hp, nr, nc, maxPathEffort);
+                }
+            }
+        }
+    }
+    
+    // 4. Memory Cleanup
+    for (int i = 0; i < rows; i++) {
+        free(eff[i]);
+    }
+    free(eff);
+    free(hp->data);
+    free(hp);
+    
+    return result;
+}
