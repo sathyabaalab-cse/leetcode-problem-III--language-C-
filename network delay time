@@ -1,0 +1,82 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+#define INF 1e9
+
+int networkDelayTime(int** times, int timesSize, int* timesColSize, int n, int k) {
+    // 1. Create and initialize the adjacency matrix
+    // Nodes are 1-indexed, so we allocate size (n + 1)
+    int** adj = (int**)malloc((n + 1) * sizeof(int*));
+    for (int i = 0; i <= n; i++) {
+        adj[i] = (int*)malloc((n + 1) * sizeof(int));
+        for (int j = 0; j <= n; j++) {
+            adj[i][j] = INF;
+        }
+    }
+
+    // Populate the adjacency matrix with given travel times
+    for (int i = 0; i < timesSize; i++) {
+        int u = times[i][0];
+        int v = times[i][1];
+        int w = times[i][2];
+        adj[u][v] = w;
+    }
+
+    // 2. Setup tracking arrays for Dijkstra
+    int* dist = (int*)malloc((n + 1) * sizeof(int));
+    bool* visited = (bool*)calloc((n + 1), sizeof(bool));
+    
+    for (int i = 1; i <= n; i++) {
+        dist[i] = INF;
+    }
+    dist[k] = 0; // Distance to the signal source is 0
+
+    // 3. Dijkstra's core loop
+    for (int i = 1; i <= n; i++) {
+        int u = -1;
+        int minDist = INF;
+
+        // Find the unvisited node with the smallest distance
+        for (int j = 1; j <= n; j++) {
+            if (!visited[j] && dist[j] < minDist) {
+                minDist = dist[j];
+                u = j;
+            }
+        }
+
+        // If no reachable unvisited node is found, stop exploring
+        if (u == -1) break;
+
+        visited[u] = true;
+
+        // Update the distances of neighboring nodes
+        for (int v = 1; v <= n; v++) {
+            if (adj[u][v] != INF && dist[u] + adj[u][v] < dist[v]) {
+                dist[v] = dist[u] + adj[u][v];
+            }
+        }
+    }
+
+    // 4. Calculate the maximum time required to reach any node
+    int maxTime = 0;
+    for (int i = 1; i <= n; i++) {
+        if (dist[i] == INF) {
+            maxTime = -1; // Node i is unreachable from source k
+            break;
+        }
+        if (dist[i] > maxTime) {
+            maxTime = dist[i];
+        }
+    }
+
+    // 5. Memory Cleanup
+    for (int i = 0; i <= n; i++) {
+        free(adj[i]);
+    }
+    free(adj);
+    free(dist);
+    free(visited);
+
+    return maxTime;
+}
