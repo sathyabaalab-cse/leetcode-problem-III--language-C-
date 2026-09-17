@@ -1,0 +1,49 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#define MAX_VALUE 100005
+long long maximumSubarraySum(int *nums,int numsize,int k)
+{
+    int freq[MAX_VALUE]={0};
+    long long current_sum=0;
+    long long max_sum=0;
+    int c=0;
+    int i;
+    for(i=0;i<k;i++)
+    {
+        int val=nums[i];
+        current_sum=current_sum+val;
+        
+        if(freq[val] == 0)
+        {
+            c++;
+        }
+        freq[val]++;
+    }
+    if(c == k)
+    {
+        max_sum=current_sum;
+    }
+    for(i=k;i<numsize;i++)
+    {
+        int next_val=nums[i];
+        current_sum=current_sum+next_val;
+        if(freq[next_val] == 0)
+        {
+            c++;
+        }
+        freq[next_val]++;
+        int prev_val=nums[i-k];
+        current_sum=current_sum-prev_val;
+        freq[prev_val]--;
+        if(freq[prev_val] == 0)
+        {
+            c--;
+        }
+        if(c == k && current_sum>max_sum)
+        {
+            max_sum=current_sum;
+        }
+    }
+    return max_sum ;  
+}
