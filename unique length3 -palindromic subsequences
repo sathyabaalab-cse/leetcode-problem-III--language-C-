@@ -1,0 +1,21 @@
+#include <string.h>
+int countPalindromicSubsequence(char* s) {
+    int total_palindromes = 0;
+    for (char c = 'a'; c <= 'z'; c++) {
+        char* first = strchr(s, c); 
+        char* last = strrchr(s, c);  
+        if (first != NULL && last > first + 1) {
+            int middle_seen[26] = {0}; 
+            int unique_count = 0;
+            for (char* mid = first + 1; mid < last; mid++) {
+                int idx = *mid - 'a';
+                if (middle_seen[idx] == 0) {
+                    middle_seen[idx] = 1; // Mark as counted
+                    unique_count++;
+                }
+            }
+            total_palindromes += unique_count;
+        }
+    }
+    return total_palindromes;
+}
