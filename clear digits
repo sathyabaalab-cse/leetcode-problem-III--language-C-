@@ -1,0 +1,24 @@
+char* clearDigits(char* s) {
+    int len=strlen(s);
+    char* stack=(char*)malloc((len+1)*sizeof(char));
+    if(stack == NULL)
+        return NULL;
+    int top=0;
+    for(int i=0;s[i]!=0;i++)
+    {
+        if(isdigit(s[i]))
+        {
+            if(top>0)
+            {
+                top--;
+            }
+        }
+        else
+        {
+            stack[top]=s[i];
+            top++;
+        }
+    }
+    stack[top]='\0';
+    return stack;
+}
