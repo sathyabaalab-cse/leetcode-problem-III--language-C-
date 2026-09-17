@@ -1,0 +1,28 @@
+#include <stdbool.h>
+#include <string.h>
+bool hasAllCodes(char* s, int k) {
+    int len = strlen(s);
+    int total_codes = 1;
+    for (int i = 0; i < k; i++) {
+        total_codes *= 2;
+    }
+    if (len - k + 1 < total_codes) {
+        return false;
+    }
+    bool visited[1048576] = {false}; 
+    int unique_count = 0;
+    for (int i = 0; i <= len - k; i++) {
+        int current_value = 0;
+        for (int j = 0; j < k; j++) {
+            current_value = current_value * 2 + (s[i + j] - '0');
+        }
+        if (!visited[current_value]) {
+            visited[current_value] = true;
+            unique_count++;
+            if (unique_count == total_codes) {
+                return true;
+            }
+        }
+    }
+    return unique_count == total_codes;
+}
